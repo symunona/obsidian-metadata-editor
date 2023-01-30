@@ -6,3 +6,5 @@ available in the app when your plugin is enabled.
 If your plugin does not need CSS, delete this file.
 
 */
+
+.full-width{ width: 100% }
