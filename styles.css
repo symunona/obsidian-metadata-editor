@@ -8,3 +8,5 @@ If your plugin does not need CSS, delete this file.
 */
 
 .full-width{ width: 100% }
+
+.faded-value-list{ color: #777; display: inline-block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
