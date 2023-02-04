@@ -44,10 +44,10 @@ export class MetaDataViewTable extends ItemView {
 			header.createEl("h4", { text: "Loading Meta Index" });
 		}
 
-		const search = container.createEl("input", {
+		const search = header.createEl("input", {
 			value: "",
 			cls: "full-width filter",
-			placeholder: "filter",
+			placeholder: "dataview style filter e.g. metakey = test",
 		});
 
 		search.addEventListener("change", async (ev) => {
@@ -72,7 +72,6 @@ export class MetaDataViewTable extends ItemView {
 				const resultListEl = results.createEl("div", {cls: 'nav-files-container'});
 
         const foundFileNames = data.value.values
-					// .slice(0, MAX_LIST)
 					.map((item) => {
 						return item[0].path;
 					});
@@ -103,7 +102,6 @@ export class MetaDataViewTable extends ItemView {
 				error.createEl("p", { text: "Query Error:" });
 				error.createEl("pre", { text: data.error });
 			}
-			console.warn("data", data);
 		});
 	}
 

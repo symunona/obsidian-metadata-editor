@@ -1,8 +1,18 @@
 import { basename, dirname, sep } from "path";
 import { extend } from "underscore";
+import { getIcon } from "obsidian";
+
+// @ts-ignore
+window.getIcon = getIcon;
 
 class Folder {
-	[fileOrFolderName: string]: Folder | string;
+	constructor(name: string, parent?: Folder) {
+		this.name = name;
+		this.parent = parent;
+	}
+	name: string;
+	parent: Folder | undefined;
+	children: { [fileOrFolderName: string]: Folder | string } = {};
 }
 
 export function createTreeFromFileMap(fileList: Array<string>) {
@@ -18,30 +28,31 @@ export function createTreeFromFileMap(fileList: Array<string>) {
 		}
 		map[dir][basename(item)] = item;
 	});
-	console.log("map", map);
 
-	let folderTree: Folder = {};
+	let folderTree: Folder = new Folder("(root)");
 
 	// Smart folder tree, where we have folders that only have one child grouped.
 	// First, just build the tree, than snap it together.
 	Object.keys(map).forEach((folderKey) => {
-		const folders = folderKey
-			.split(sep)
-			.slice(0, folderKey.split(sep).length - 1);
+		const folders = folderKey.split(sep);
 		let currentFolderRef = folderTree;
 		folders.forEach((subFolder) => {
-			currentFolderRef[subFolder] =
-				currentFolderRef[subFolder] || new Folder();
+			currentFolderRef.children[subFolder] =
+				currentFolderRef.children[subFolder] ||
+				new Folder(subFolder, currentFolderRef);
 			// @ts-ignore
-			currentFolderRef = currentFolderRef[subFolder];
+			currentFolderRef = currentFolderRef.children[subFolder];
 		});
-		currentFolderRef = extend(currentFolderRef, map[folderKey]);
+		currentFolderRef.children = extend(
+			currentFolderRef.children,
+			map[folderKey]
+		);
 	});
-	console.log("tree:", folderTree);
 
 	// Now snap together all the ones that only have one keys:
+	// console.log('folderTee', folderTree)
 	folderTree = snapTogetherSoloElements(folderTree, "");
-	console.warn("snapped tree", folderTree);
+	// console.log('SNAPPED', folderTree)
 	return folderTree;
 }
 
@@ -50,20 +61,24 @@ function snapTogetherSoloElements(
 	path: string
 ): Folder {
 	const foldersWithinFolder = Object.keys(folderTreeRoot).filter(
-		(child) => folderTreeRoot[child] instanceof Folder
+		(child) => folderTreeRoot.children[child] instanceof Folder
 	);
 	const filesWithinFolderCount = Object.keys(folderTreeRoot).filter(
-		(child) => folderTreeRoot[child] instanceof String
+		(child) => folderTreeRoot.children[child] instanceof String
 	).length;
 	// Dd the snap
 	if (foldersWithinFolder.length === 1 && filesWithinFolderCount === 0) {
 		const subFolderName = Object.keys(folderTreeRoot)[0];
 
-		return snapTogetherSoloElements(
+		const collapsed = snapTogetherSoloElements(
 			// @ts-ignore due to we just filtered it up there.
 			folderTreeRoot[subFolderName],
 			(path += sep + folderTreeRoot)
 		);
+
+		folderTreeRoot.name += sep + subFolderName;
+		folderTreeRoot.children = collapsed.children;
+		return folderTreeRoot;
 	} else {
 		foldersWithinFolder.map((subFolderName) =>
 			snapTogetherSoloElements(
@@ -77,26 +92,40 @@ function snapTogetherSoloElements(
 }
 
 export function renderTree(leaf: HTMLElement, tree: Folder) {
-	const foldersWithinFolder = Object.keys(tree).filter(
-		(child) => tree[child] instanceof Folder
+	const foldersWithinFolder = Object.keys(tree.children).filter(
+		(child) => tree.children[child] instanceof Folder
 	);
-	const filesWithinFolder = Object.keys(tree).filter(
-		(child) => {
-            return !(tree[child] instanceof Folder)
-        }
-	);
+	const filesWithinFolder = Object.keys(tree.children).filter((child) => {
+		return !(tree.children[child] instanceof Folder);
+	});
 	foldersWithinFolder.forEach((subFolderKey) => {
 		// Add subfolder opener:
 		const folderRootEl = leaf.createDiv({ cls: "nav-folder" });
-		folderRootEl.createDiv({ cls: "nav-folder-title", text: subFolderKey });
+		const title = folderRootEl.createDiv({ cls: "nav-folder-title" });
+		const collapseArrow = title.createDiv({
+			cls: "nav-folder-collapse-indicator collapse-icon",
+		});
+        // @ts-ignore
+		collapseArrow.append(getIcon("chevron-down"));
+
+        title.createDiv({
+			cls: "nav-folder-title-content",
+			text: subFolderKey,
+		});
 		const subFolderEl = folderRootEl.createDiv({
 			cls: "nav-folder-children",
 		});
 		// @ts-ignore
-		renderTree(subFolderEl, tree[subFolderKey]);
+		renderTree(subFolderEl, tree.children[subFolderKey]);
 	});
 	filesWithinFolder.forEach((fileName) => {
-		leaf.createDiv({ cls: "nav-file", text: fileName });
-        console.warn('fileName', fileName, tree[fileName])
+		const fileItemContainer = leaf.createDiv({ cls: "nav-file" });
+        const title = fileItemContainer.createDiv({cls: 'nav-file-title'})
+        title.createDiv({cls: 'nav-file-title-content', text: fileName})
+        fileItemContainer.addEventListener('click', ()=>{
+            const file = this.app.metadataCache.getFirstLinkpathDest(tree.children[fileName], "");
+            const leaf = this.app.workspace.getUnpinnedLeaf();
+            leaf.openFile(file, {active: true})
+        })
 	});
 }
