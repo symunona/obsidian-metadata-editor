@@ -57,9 +57,22 @@ export class MetaDataViewTable extends ItemView {
 				return;
 			}
 
-			const data = await this.dataViewApi.query(
-				"table file where " + search.value
-			);
+      const userQuery = search.value.toLowerCase().trim()
+
+      // Smart WHERE.
+      let query = ''
+      if (userQuery.startsWith('from') ||
+        userQuery.startsWith('where') ||
+        userQuery.startsWith('group by') ||
+        userQuery.startsWith('limit') ||
+        userQuery.startsWith('flatten')){
+        query = "table file " + search.value
+      } else {
+        // Assume the where
+        query = "table file where " + search.value
+      }
+
+			const data = await this.dataViewApi.query(query);
 
 			error.empty();
 			results.empty();
