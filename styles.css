@@ -40,6 +40,7 @@ If your plugin does not need CSS, delete this file.
     padding-left: var(--nav-item-children-padding-left);
     margin: 0 0 0 var(--nav-item-children-margin-left);
     border-left: var(--nav-indentation-guide-width) solid var(--nav-indentation-guide-color);
+    overflow: hidden;
 }
 
 .nav-file.has-focus > .nav-file-title {
@@ -48,3 +49,15 @@ If your plugin does not need CSS, delete this file.
 }
 
 .nav-file { border-radius: var(--radius-s); }
+
+.meta-data-view-table-container{
+    overflow-x: auto;
+}
+
+tr:hover .reveal-eye{
+    visibility: visible;
+}
+.reveal-eye{ display: inline-block;  visibility: hidden; margin-left: 10px; }
+.reveal-eye:hover{ color: white; }
+
+.data-view-meta-key { overflow: hidden; text-overflow: ellipsis; max-height: 32px; white-space: nowrap }

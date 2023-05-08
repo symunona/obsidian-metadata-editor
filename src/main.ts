@@ -8,24 +8,26 @@ import {
 	PluginSettingTab,
 	Setting,
 } from "obsidian";
-import { META_DATA_VIEW_TYPE, MetaDataViewTable } from "view";
+import { META_DATA_VIEW_TYPE, MetaDataViewTableView } from "src/view";
 
 import { getAPI as getDataViewApi } from "obsidian-dataview";
-import { FolderMeta } from "folder-meta";
+import { FolderMeta } from "./folder-meta";
 
 
 // Remember to rename these classes and interfaces!
 
-interface MyPluginSettings {
-	mySetting: string;
+interface MetaDataViewSettings {
+	outputFolder: string;
+	exportQuery: string;
 }
 
-const DEFAULT_SETTINGS: MyPluginSettings = {
-	mySetting: "default",
+const DEFAULT_SETTINGS: MetaDataViewSettings = {
+	outputFolder: "output",
+	exportQuery: "blog"
 };
 
 export default class MetaDataView extends Plugin {
-	settings: MyPluginSettings;
+	settings: MetaDataViewSettings;
 
 	// metaFolderCache: { [filePath: string]: any } = {};
 	// metaFolderAttributeCache: { [folderPath: string]: any } = {};
@@ -40,7 +42,7 @@ export default class MetaDataView extends Plugin {
 
 		this.registerView(
 			META_DATA_VIEW_TYPE,
-			(leaf) => new MetaDataViewTable(leaf)
+			(leaf) => new MetaDataViewTableView(leaf)
 		);
 
 		// This creates an icon in the left ribbon.
@@ -100,7 +102,7 @@ export default class MetaDataView extends Plugin {
 		});
 
 		// This adds a settings tab so the user can configure various aspects of the plugin
-		this.addSettingTab(new SampleSettingTab(this.app, this));
+		this.addSettingTab(new OutputSettingTab(this.app, this));
 
 		// If the plugin hooks up any global DOM events (on parts of the app that doesn't belong to this plugin)
 		// Using this function will automatically remove the event listener when this plugin is disabled.
@@ -115,7 +117,7 @@ export default class MetaDataView extends Plugin {
 
 		this.registerEvent(
 			this.app.vault.on("modify", (e) => {
-				console.warn("update caught", e);
+				console.warn("File modified:", e.name, e);
 			})
 		);
 
@@ -123,10 +125,10 @@ export default class MetaDataView extends Plugin {
 
 		this.registerEvent(
 			this.app.metadataCache.on("resolved", () => {
-				console.log("dataview ready");
+				// console.log("dataview ready");
 				if (this.dataViewApi) {
 					this.folderMeta = new FolderMeta(this.dataViewApi.index);
-					console.log("yaaay", this.folderMeta);
+					// console.log("yaaay", this.folderMeta);
 				} else {
 					new Notice(
 						"Meta-Dataview needs Dataview plugin to be installed."
@@ -135,7 +137,15 @@ export default class MetaDataView extends Plugin {
 			})
 		);
 
-		console.log("api: ", this.dataViewApi);
+		// console.warn('register file menu events')
+
+		// this.registerEvent(
+		// 	this.app.workspace.on('file-menu', (menu, file: TFile) => {
+		// 		console.warn('file menu', menu)
+		// 	}))
+
+
+		// console.log("DataView API: ", this.dataViewApi);
 		if (this.dataViewApi) {
 			this.folderMeta = new FolderMeta(this.dataViewApi.index);
 		}
@@ -204,7 +214,7 @@ class SampleModal extends Modal {
 	}
 }
 
-class SampleSettingTab extends PluginSettingTab {
+class OutputSettingTab extends PluginSettingTab {
 	plugin: MetaDataView;
 
 	constructor(app: App, plugin: MetaDataView) {
@@ -216,22 +226,35 @@ class SampleSettingTab extends PluginSettingTab {
 		const { containerEl } = this;
 
 		containerEl.empty();
-
-		containerEl.createEl("h2", { text: "Settings for my awesome plugin." });
+		containerEl.createEl("h2", { text: "Export Settings" });
+		containerEl.createEl("div", { text: "Meta DataView can export a certain subset of your notes, based on whether they match a query filter. " });
 
 		new Setting(containerEl)
-			.setName("Setting #1")
-			.setDesc("It's a secret")
+			.setName("Export Folder")
+			.setDesc("Which folder do you want to export converted markdown files with their assets?")
 			.addText((text) =>
 				text
-					.setPlaceholder("Enter your secret")
-					.setValue(this.plugin.settings.mySetting)
+					.setPlaceholder("default")
+					.setValue(this.plugin.settings.outputFolder)
 					.onChange(async (value) => {
-						console.log("Secret: " + value);
-						this.plugin.settings.mySetting = value;
+						this.plugin.settings.outputFolder = value;
 						await this.plugin.saveSettings();
 					})
 			);
+
+
+		new Setting(containerEl)
+		.setName("Filter Query")
+		.setDesc("DataView style query")
+		.addText((text) =>
+			text
+				.setPlaceholder("default")
+				.setValue(this.plugin.settings.exportQuery)
+				.onChange(async (value) => {
+					this.plugin.settings.exportQuery = value;
+					await this.plugin.saveSettings();
+				})
+		);
 	}
 }
 

@@ -1,19 +1,10 @@
 import { basename, dirname, sep } from "path";
 import { extend } from "underscore";
 import { getIcon } from "obsidian";
+import Folder from "src/folder";
 
 // @ts-ignore
 window.getIcon = getIcon;
-
-class Folder {
-	constructor(name: string, parent?: Folder) {
-		this.name = name;
-		this.parent = parent;
-	}
-	name: string;
-	parent: Folder | undefined;
-	children: { [fileOrFolderName: string]: Folder | string } = {};
-}
 
 export function createTreeFromFileMap(fileList: Array<string>) {
 	const map: {
@@ -89,43 +80,4 @@ function snapTogetherSoloElements(
 		);
 		return folderTreeRoot;
 	}
-}
-
-export function renderTree(leaf: HTMLElement, tree: Folder) {
-	const foldersWithinFolder = Object.keys(tree.children).filter(
-		(child) => tree.children[child] instanceof Folder
-	);
-	const filesWithinFolder = Object.keys(tree.children).filter((child) => {
-		return !(tree.children[child] instanceof Folder);
-	});
-	foldersWithinFolder.forEach((subFolderKey) => {
-		// Add subfolder opener:
-		const folderRootEl = leaf.createDiv({ cls: "nav-folder" });
-		const title = folderRootEl.createDiv({ cls: "nav-folder-title" });
-		const collapseArrow = title.createDiv({
-			cls: "nav-folder-collapse-indicator collapse-icon",
-		});
-        // @ts-ignore
-		collapseArrow.append(getIcon("chevron-down"));
-
-        title.createDiv({
-			cls: "nav-folder-title-content",
-			text: subFolderKey,
-		});
-		const subFolderEl = folderRootEl.createDiv({
-			cls: "nav-folder-children",
-		});
-		// @ts-ignore
-		renderTree(subFolderEl, tree.children[subFolderKey]);
-	});
-	filesWithinFolder.forEach((fileName) => {
-		const fileItemContainer = leaf.createDiv({ cls: "nav-file" });
-        const title = fileItemContainer.createDiv({cls: 'nav-file-title'})
-        title.createDiv({cls: 'nav-file-title-content', text: fileName})
-        fileItemContainer.addEventListener('click', ()=>{
-            const file = this.app.metadataCache.getFirstLinkpathDest(tree.children[fileName], "");
-            const leaf = this.app.workspace.getUnpinnedLeaf();
-            leaf.openFile(file, {active: true})
-        })
-	});
 }
