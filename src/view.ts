@@ -1,12 +1,13 @@
-import { ItemView, WorkspaceLeaf } from "obsidian";
+import { ItemView, Notice, WorkspaceLeaf } from "obsidian";
 
 import { getAPI } from "./main";
 
 import { getAPI as getDataViewApi } from "obsidian-dataview";
 import { createTreeFromFileMap } from "utils";
-import { MetaDataViewTableRender } from "./render-table";
-import { createMetaIndex } from "./folder-meta";
-import { SearchInputWithHistory } from "./search-history";
+import { MetaDataViewTableRender } from "./ui/render-table";
+import { createMetaIndex } from "./utils/folder-meta";
+import { SearchInputWithHistory } from "./ui/search-history";
+import { exportSelection } from "./export/exporter";
 
 export const META_DATA_VIEW_TYPE = "meta-data-type";
 
@@ -21,6 +22,9 @@ export class MetaDataViewTableView extends ItemView {
 	error: HTMLElement;
 	results: HTMLElement;
 	searchInput: SearchInputWithHistory
+	exportButton: HTMLButtonElement;
+	topRightMenuContainer: HTMLDivElement;
+	lastFoundFileList: any[];
 
 	constructor(leaf: WorkspaceLeaf) {
 		super(leaf);
@@ -47,10 +51,21 @@ export class MetaDataViewTableView extends ItemView {
 		this.results = container.createDiv();
 		if (this.api) {
 			this.api.folderMeta;
-			this.header.createEl("h4", { text: "Meta Dataview Index" });
+			this.topRightMenuContainer = this.header.createDiv({cls: 'top-right-button-conainer'})
+			this.exportButton = this.topRightMenuContainer.createEl('button', { text: "Export ..."})
+			this.exportButton.addEventListener('click', ()=>{
+				if (this.lastFoundFileList && this.lastFoundFileList.length){
+					exportSelection(this.lastFoundFileList)
+				} else {
+					new Notice('Hmmm... Nothing to export.')
+				}
+			})
+			this.header.createEl("h4", { text: "Bulk Metadata Manipulator" });
 		} else {
 			this.header.createEl("h4", { text: "Loading Meta Index" });
 		}
+
+
 
 		// @ts-ignore
 		const initialQuery = this.app.plugins.plugins['meta-dataview'].settings.exportQuery
@@ -112,8 +127,8 @@ export class MetaDataViewTableView extends ItemView {
 			// renderTree(resultListEl, fileTree)
 
 			const foundFileMap: { [key: string]: Array<any> } = {}
-			const foundFiles = data.value.values.map((item) => {
-				foundFileMap[item[1].path] = item[1].frontmatter
+			const foundFiles = this.lastFoundFileList = data.value.values.map((item) => {
+				foundFileMap[item[1].path] = item[1]
 				return item[1];
 			});
 
@@ -140,12 +155,11 @@ export class MetaDataViewTableView extends ItemView {
 			Object.keys(metaPropertiesOfList).map((attrKey) => {
 				const metaAttrItemEl = metaAttrContainer.createEl("li");
 				metaAttrItemEl.createSpan({ text: attrKey });
-				console.warn(metaPropertiesOfList)
+				// console.warn(metaPropertiesOfList)
 
 				if (metaPropertiesOfList[attrKey].length &&
 					metaPropertiesOfList[attrKey][0]?.length < MAX_META_VALUE_LENGTH_TO_DISPLAY) {
 					metaPropertiesOfList[attrKey].forEach((metaValue) => {
-						console.error('meta', metaValue)
 						metaAttrItemEl.createEl("i", {
 							cls: "faded-value-list",
 							text: metaValue

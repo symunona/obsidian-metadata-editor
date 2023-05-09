@@ -1,7 +1,7 @@
 import { basename, dirname, sep } from "path";
 import { extend } from "underscore";
 import { getIcon } from "obsidian";
-import Folder from "src/folder";
+import Folder from "src/models/folder";
 
 // @ts-ignore
 window.getIcon = getIcon;

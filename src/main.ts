@@ -11,19 +11,24 @@ import {
 import { META_DATA_VIEW_TYPE, MetaDataViewTableView } from "src/view";
 
 import { getAPI as getDataViewApi } from "obsidian-dataview";
-import { FolderMeta } from "./folder-meta";
+import { FolderMeta } from "./utils/folder-meta";
+import { DEFAULT_EXPORT_PATH } from "./export/exporter";
 
 
 // Remember to rename these classes and interfaces!
 
 interface MetaDataViewSettings {
+	slug: string;
+	groupBy: string;
 	outputFolder: string;
 	exportQuery: string;
 }
 
 const DEFAULT_SETTINGS: MetaDataViewSettings = {
 	outputFolder: "output",
-	exportQuery: "blog"
+	exportQuery: "blog",
+	slug: '',
+	groupBy: ''
 };
 
 export default class MetaDataView extends Plugin {
@@ -115,11 +120,12 @@ export default class MetaDataView extends Plugin {
 		// 	window.setInterval(() => console.log("setInterval"), 5 * 60 * 1000)
 		// );
 
-		this.registerEvent(
-			this.app.vault.on("modify", (e) => {
-				console.warn("File modified:", e.name, e);
-			})
-		);
+		// Track if a file has been modified!
+		// this.registerEvent(
+		// 	this.app.vault.on("modify", (e) => {
+		// 		console.warn("File modified:", e.name, e);
+		// 	})
+		// );
 
 		// console.log('pages', )
 
@@ -234,7 +240,7 @@ class OutputSettingTab extends PluginSettingTab {
 			.setDesc("Which folder do you want to export converted markdown files with their assets?")
 			.addText((text) =>
 				text
-					.setPlaceholder("default")
+					.setPlaceholder(DEFAULT_EXPORT_PATH)
 					.setValue(this.plugin.settings.outputFolder)
 					.onChange(async (value) => {
 						this.plugin.settings.outputFolder = value;
@@ -255,6 +261,32 @@ class OutputSettingTab extends PluginSettingTab {
 					await this.plugin.saveSettings();
 				})
 		);
+		new Setting(containerEl)
+		.setName("Group By Folder")
+		.setDesc("if you specify a value, the exporter will create sub-directories based on this field")
+		.addText((text) =>
+			text
+				.setPlaceholder("any metadata field")
+				.setValue(this.plugin.settings.groupBy)
+				.onChange(async (value) => {
+					this.plugin.settings.groupBy = value;
+					await this.plugin.saveSettings();
+				})
+		);
+
+		new Setting(containerEl)
+		.setName("Metadata To Filename")
+		.setDesc("if you specify a value, the exporter will rename your file to this front-matter value - this is useful e.g. if you are using a static site generator, and want to use a field as the filename to make it more web-accessible. (If it does not have a value, it falls back to the original filename) - WARN: if multiple files have the same property values the last one will be written!")
+		.addText((text) =>
+			text
+				.setPlaceholder("any metadata field")
+				.setValue(this.plugin.settings.slug)
+				.onChange(async (value) => {
+					this.plugin.settings.slug = value;
+					await this.plugin.saveSettings();
+				})
+		);
+
 	}
 }
 

@@ -4,7 +4,7 @@
  */
 
 import { getIcon } from "obsidian";
-import Folder from "./folder";
+import Folder from "../models/folder";
 
 export default function renderTree(leaf: HTMLElement, tree: Folder) {
 	const foldersWithinFolder = Object.keys(tree.children).filter(

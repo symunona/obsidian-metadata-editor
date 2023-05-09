@@ -1,6 +1,5 @@
-
 /**
- * Reveals absolute path in
+ * Reveals absolute path of file or dir in the left side file explorer panel.
  * @param path
  */
 export function revealInFolder(path: string) {

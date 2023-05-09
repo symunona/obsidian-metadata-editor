@@ -3,11 +3,14 @@
  * Handles collapse and open.
  */
 
-import { TAbstractFile } from "obsidian";
-import Folder from "./folder";
-import { revealInFolder } from "./obsidian-api-helpers/file-explorer";
-import { getIcon } from "./obsidian-api-helpers/get-icon";
-import { createLink, isHttpUrl } from "./utils/url";
+import { Notice, TAbstractFile } from "obsidian";
+import Folder from "../models/folder";
+import { revealInFolder } from "../obsidian-api-helpers/file-explorer";
+import { getIcon } from "../obsidian-api-helpers/get-icon";
+import { createLink, isHttpUrl } from "../utils/url";
+import { openFileByPath } from "src/obsidian-api-helpers/file-by-path";
+
+const OVERWRITE_LOCALE = 'hu-HU'
 
 export type CallbackFunction = (path: string) => void;
 
@@ -48,7 +51,7 @@ export class MetaDataViewTableRender {
 			tableHeadTr.append(tableHeadTh)
 			// const toggler = tableHeadTh.createSpan({cls: 'column-toggler'})
 			// 	.append(getIcon('chevron-down'))
-			// const titleText = 
+			// const titleText =
 			tableHeadTh.createSpan({ text: name })
 		})
 		const tBody = tableRoot.createEl('tbody', { cls: 'table-view-tbody' })
@@ -93,16 +96,16 @@ export class MetaDataViewTableRender {
 		});
 	}
 
-	renderFileRow(tableBodyRoot: HTMLElement, fullPath: string){
+	renderFileRow(tableBodyRoot: HTMLElement, fullPath: string) {
 		// @ts-ignore: TODO: I did a poor job with this filtering, the string should be a TAbstractFile
-		const metaData = this.fileMapByAbsolutePath[fullPath];
+		const metaData = this.fileMapByAbsolutePath[fullPath].frontmatter;
 
 		const fileName = fullPath.substring(fullPath.lastIndexOf('/') + 1)
 		const folderPath = fullPath.substring(0, fullPath.length - fileName.length - 1)
 
 		const fileItemRow = tableBodyRoot.createEl('tr', {
 			cls: "nav-file tree-item meta-data-table-file-row",
-			attr: { 'data-path':  folderPath}
+			attr: { 'data-path': folderPath }
 		});
 
 		const title = fileItemRow.createEl('td', {
@@ -112,20 +115,21 @@ export class MetaDataViewTableRender {
 
 		// title.createDiv({ cls: 'nav-file-title-content', text: fileName })
 		title.addEventListener('click', () => {
-			// @ts-ignore - this is only for files, which are strings.
-			// console.warn('opening file', )
 			revealInFolder(fullPath)
-			// const file = this.app.metadataCache.getFirstLinkpathDest(filePath, "");
-			// const leaf = this.app.workspace.getUnpinnedLeaf();
-			// leaf.openFile(file, { active: true })
 		})
-		Object.keys(this.metaKeysToShow).forEach((metaKey) =>{
-			this.renderCell(fileItemRow, metaKey, metaData[metaKey])
+		title.addEventListener('dblclick', () => {
+			revealInFolder(fullPath)
+			openFileByPath(fullPath)
 		})
 
+
+		Object.keys(this.metaKeysToShow).forEach((metaKey) => {
+			this.renderMetaCell(fileItemRow, metaKey, metaData[metaKey])
+		})
 	}
 
-	renderFolderHeaderRow(tableBodyRoot: HTMLElement, absolutePath: string){
+
+	renderFolderHeaderRow(tableBodyRoot: HTMLElement, absolutePath: string) {
 		const pathHeader = tableBodyRoot.createEl('tr', { cls: "table-sub-header tree-item" });
 
 		// TODO: get the full path of the folder here
@@ -170,18 +174,18 @@ export class MetaDataViewTableRender {
 		})
 	}
 
-	renderCell(
+	renderMetaCell(
 		fileItemRow: HTMLElement,
 		metaKey: string,
 		value: any
-		) {
+	) {
 		// console.log('stirng!')
 		const td = fileItemRow.createEl('td', { cls: 'data-view-meta-key' })
 		if (metaKey === 'tags' && value instanceof Array) {
 			// console.log('aaaaa', value)
 			value.forEach((tag: string, i) => {
 				const tagLink = td.createEl('a', { cls: 'tag-link', text: tag })
-				tagLink.addEventListener('click', ()=> {
+				tagLink.addEventListener('click', () => {
 					// DataView does not handle multi-word tags, instead it
 					// adds them to multiple indexes. Hence if this is a multi-word tag,
 					// let's just filter it with an AND.
@@ -193,16 +197,39 @@ export class MetaDataViewTableRender {
 				if (i < value.length - 1)
 					td.createSpan({ text: ', ' })
 			})
-		} else if (isHttpUrl(value)){
-			console.log('ht:', value)
+		} else if (isHttpUrl(value)) {
 			createLink(td, value, 'url', value)
-		} else if (value && (typeof(value) === 'string') && value.indexOf(' ') === -1){
-			const link = createLink(td, value, value)
-			link.addEventListener('click', ()=>{
-				this.goToFilter(`where ${metaKey}="${value}"`)
+		} else if (value && (typeof (value) === 'string') && value.indexOf(' ') === -1) {
+			// Try if this is a date
+			if (isValidDate(new Date(value))) {
+				const date = new Date(value)
+				let display = date.toLocaleDateString(OVERWRITE_LOCALE)
+				// Hide time, if it's just a date
+				if (!(date.getUTCHours() === 0 && date.getMinutes() === 0)){
+					display += ' ' + date.toLocaleTimeString()
+				}
+				td.createSpan({ cls: 'meta-value', text: display, attr: {title: value} })
+			} else {
+				const link = createLink(td, value, value)
+				link.addEventListener('click', () => {
+					this.goToFilter(`where ${metaKey}="${value}"`)
+				})
+			}
+		} else if (value instanceof Array){
+			td.createSpan({ cls: 'meta-value', text: value.join(', ')})
+		} else if (value instanceof Object){
+			td.createEl('button', { cls: 'meta-value', text: 'JS Object', attr: {title: JSON.stringify(value, null, 2)}})
+			td.addEventListener('click', ()=>{
+				new Notice("Copied to clipboard! \n" + JSON.stringify(value, null, 2));
+				navigator.clipboard.writeText(JSON.stringify(value, null, 2));
 			})
+			console.error('!!!', value)
 		} else {
 			td.createSpan({ cls: 'meta-value', text: value })
 		}
 	}
+}
+
+function isValidDate(date: Date) {
+	return date instanceof Date && isFinite(+date);
 }
