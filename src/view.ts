@@ -52,10 +52,10 @@ export class MetaDataViewTableView extends ItemView {
 		this.results = container.createDiv();
 		if (this.api) {
 			this.api.folderMeta;
-			this.topRightMenuContainer = this.header.createDiv({cls: 'top-right-button-conainer'})
-			this.exportButton = this.topRightMenuContainer.createEl('button', { text: "Export ..."})
-			this.exportButton.addEventListener('click', ()=>{
-				if (this.lastFoundFileList && this.lastFoundFileList.length){
+			this.topRightMenuContainer = this.header.createDiv({ cls: 'top-right-button-conainer' })
+			this.exportButton = this.topRightMenuContainer.createEl('button', { text: "Export ..." })
+			this.exportButton.addEventListener('click', () => {
+				if (this.lastFoundFileList && this.lastFoundFileList.length) {
 					exportSelection(this.lastFoundFileList)
 				} else {
 					new Notice('Hmmm... Nothing to export.')
@@ -154,21 +154,35 @@ export class MetaDataViewTableView extends ItemView {
 				cls: "bordered-container",
 			});
 			Object.keys(metaPropertiesOfList).map((attrKey) => {
-				const metaAttrItemEl = metaAttrContainer.createEl("li");
-				metaAttrItemEl.createSpan({ text: attrKey });
+				const metaAttrItemEl = metaAttrContainer.createEl("li", { cls: 'meta-values' });
+				metaAttrItemEl.createSpan({ cls: 'meta-key', text: attrKey });
 				// console.warn(metaPropertiesOfList)
 
 				if (metaPropertiesOfList[attrKey].length &&
 					metaPropertiesOfList[attrKey][0]?.length < MAX_META_VALUE_LENGTH_TO_DISPLAY) {
 					metaPropertiesOfList[attrKey].forEach((metaValue) => {
-						metaAttrItemEl.createEl("i", {
-							cls: "faded-value-list",
+						const item = metaAttrItemEl.createSpan({
+							cls: "faded-value-list-item",
 							text: metaValue
 						})
-						metaAttrItemEl.createSpan({ text: ' ' })
+						if (attrKey === 'tags') {
+							item.addEventListener('click', () => {
+								// DataView does not handle multi-word tags, instead it
+								// adds them to multiple indexes. Hence if this is a multi-word tag,
+								// let's just filter it with an AND.
+								if (metaValue.indexOf(' ') > -1) {
+									return this.searchInput.set(`from ${metaValue.split(' ').map(t => `#${t}`).join(' AND ')}`)
+								}
+								this.searchInput.set(`from #${metaValue}`)
+							})
+						} else {
+							item.addEventListener('click', () => 
+								this.searchInput.set(`where contains(${attrKey}, "${metaValue}")`))
+							
+						}
 					})
 				} else {
-					metaAttrItemEl.createEl('i', { cls: "faded-value-list", text: '...' })
+					metaAttrItemEl.createSpan({ cls: "faded-value-list-item", text: '...' })
 				}
 			});
 		} else {

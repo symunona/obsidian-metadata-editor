@@ -214,7 +214,7 @@ export class MetaDataViewTableRender {
 			} else {
 				const link = createLink(td, value, value)
 				link.addEventListener('click', () => {
-					this.goToFilter(`where ${metaKey}="${value}"`)
+					this.goToFilter(`where contains(${metaKey}, "${value}")`)
 				})
 			}
 		} else if (value instanceof Array) {

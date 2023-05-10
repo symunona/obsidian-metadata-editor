@@ -9,8 +9,13 @@ If your plugin does not need CSS, delete this file.
 
 .full-width{ width: 100% }
 
-.faded-value-list{ color: #777; display: inline-block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.faded { color: #777 }
+.meta-values .faded-value-list-item {
+     color: var(--color-base-50); display: inline-block; margin-right: 5px; margin-left: 0px}
+.meta-values .faded-value-list-item:hover { color: var(--color-base-70) }
+.meta-values .meta-key{
+    display: inline-block; font-weight: 600; margin-right: 5px
+}
+
 .meta-data-view .nav-folder{ padding-left: 5px; }
 .meta-data-view .nav-folder-children{ padding-left: 5px }
 .meta-data-view .nav-file-title, .meta-data-view .nav-folder-title{
