@@ -46,6 +46,7 @@ export class MetaDataViewTableView extends ItemView {
 	async onOpen() {
 		const container = this.containerEl.children[1];
 		container.empty();
+		container.classList.add('meta-data-view')
 		this.header = container.createDiv();
 		this.error = container.createDiv();
 		this.results = container.createDiv();
