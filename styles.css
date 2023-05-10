@@ -72,6 +72,7 @@ If your plugin does not need CSS, delete this file.
 .meta-data-view-table-container{overflow-x: auto;}
 .data-view-meta-key { overflow: hidden; text-overflow: ellipsis; max-height: 32px; white-space: nowrap }
 .data-view-meta-key.undefined {background: var(--color-base-05)}
+tr:hover .data-view-meta-key.undefined {background: var(--text-selection); opacity: 0.1}
 .data-view-meta-key.boolean {text-align: center;}
 .data-view-meta-key input {vertical-align: middle;}
 
