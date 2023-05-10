@@ -9,6 +9,7 @@ import { revealInFolder } from "../obsidian-api-helpers/file-explorer";
 import { getIcon } from "../obsidian-api-helpers/get-icon";
 import { createLink, isHttpUrl } from "../utils/url";
 import { openFileByPath } from "src/obsidian-api-helpers/file-by-path";
+import { URL } from "url";
 
 const OVERWRITE_LOCALE = 'hu-HU'
 
@@ -197,36 +198,42 @@ export class MetaDataViewTableRender {
 				if (i < value.length - 1)
 					td.createSpan({ text: ', ' })
 			})
-		} else if (isHttpUrl(value)) {
-			createLink(td, value, 'url', value)
+		} else if ((typeof (value) === 'string') && isHttpUrl(value.trim())) {
+			createLink(td, value, '🔗 ' + new URL(value).hostname, value)
+		// There is no space in it: either a date, or something we can create a filter for.
 		} else if (value && (typeof (value) === 'string') && value.indexOf(' ') === -1) {
 			// Try if this is a date
 			if (isValidDate(new Date(value))) {
 				const date = new Date(value)
 				let display = date.toLocaleDateString(OVERWRITE_LOCALE)
 				// Hide time, if it's just a date
-				if (!(date.getUTCHours() === 0 && date.getMinutes() === 0)){
+				if (!(date.getUTCHours() === 0 && date.getMinutes() === 0)) {
 					display += ' ' + date.toLocaleTimeString()
 				}
-				td.createSpan({ cls: 'meta-value', text: display, attr: {title: value} })
+				td.createSpan({ cls: 'meta-value', text: display, attr: { title: value } })
 			} else {
 				const link = createLink(td, value, value)
 				link.addEventListener('click', () => {
 					this.goToFilter(`where ${metaKey}="${value}"`)
 				})
 			}
-		} else if (value instanceof Array){
-			td.createSpan({ cls: 'meta-value', text: value.join(', ')})
-		} else if (value instanceof Object){
-			td.createEl('button', { cls: 'meta-value', text: 'JS Object', attr: {title: JSON.stringify(value, null, 2)}})
-			td.addEventListener('click', ()=>{
+		} else if (value instanceof Array) {
+			td.createSpan({ cls: 'meta-value', text: value.join(', ') })
+		} else if (value instanceof Object) {
+			td.createEl('button', { cls: 'meta-value', text: 'JS Object', attr: { title: JSON.stringify(value, null, 2) } })
+			td.addEventListener('click', () => {
 				new Notice("Copied to clipboard! \n" + JSON.stringify(value, null, 2));
 				navigator.clipboard.writeText(JSON.stringify(value, null, 2));
 			})
-			console.error('!!!', value)
+		} else if (value === undefined) {
+			td.classList.add('undefined')
+		} else if (typeof (value) === 'boolean') {
+			td.classList.add('boolean')
+			td.createEl('input', {attr: {type: 'checkbox', disabled: true, checked: value}})
 		} else {
 			td.createSpan({ cls: 'meta-value', text: value })
 		}
+
 	}
 }
 

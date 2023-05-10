@@ -4,7 +4,7 @@
  * @returns
  */
 export function isHttpUrl(str: any): boolean {
-    if (str instanceof String) {
+    if (typeof(str) === 'string') {
         return str.startsWith('http://') || str.startsWith('https://')
     }
     return false

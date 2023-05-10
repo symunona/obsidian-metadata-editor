@@ -68,16 +68,20 @@ If your plugin does not need CSS, delete this file.
 
 .nav-file { border-radius: var(--radius-s); }
 
-.meta-data-view-table-container{
-    overflow-x: auto;
-}
+/* Horizontal scrolling */
+.meta-data-view-table-container{overflow-x: auto;}
+.data-view-meta-key { overflow: hidden; text-overflow: ellipsis; max-height: 32px; white-space: nowrap }
+.data-view-meta-key.undefined {background: var(--color-base-05)}
+.data-view-meta-key.boolean {text-align: center;}
+.data-view-meta-key input {vertical-align: middle;}
 
 .table-sub-header{ background: var(--color-base-10) }
+.table-sub-header .nav-folder-title { padding: 0; line-height: 24px; padding-top: 5px; margin: 0}
+
 tr:hover .reveal-eye{ visibility: visible; }
-.reveal-eye{ display: inline-block;  visibility: hidden; margin-left: 10px; }
+.reveal-eye{ display: inline-block;  visibility: hidden; margin-left: 10px; margin-top: 3px; }
 .reveal-eye:hover{ color: white; }
 
-.data-view-meta-key { overflow: hidden; text-overflow: ellipsis; max-height: 32px; white-space: nowrap }
 
 .meta-search-wrapper{position: relative;}
 .meta-search-wrapper .remove-history-item {position: absolute; top: 2px; right: 4px}
