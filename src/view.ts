@@ -8,8 +8,9 @@ import { MetaDataViewTableRender } from "./ui/render-table";
 import { createMetaIndex } from "./utils/folder-meta";
 import { SearchInputWithHistory } from "./ui/search-history";
 import { exportSelection } from "./export/exporter";
+import { setLogOutput } from "./utils/log";
 
-export const META_DATA_VIEW_TYPE = "meta-data-type";
+export const META_DATA_VIEW_TYPE = "bulk-metadata-edit";
 
 export const MAX_META_VALUE_LENGTH_TO_DISPLAY = 20;
 
@@ -24,6 +25,7 @@ export class MetaDataViewTableView extends ItemView {
 	searchInput: SearchInputWithHistory
 	exportButton: HTMLButtonElement;
 	topRightMenuContainer: HTMLDivElement;
+	log: HTMLDivElement;
 	lastFoundFileList: any[];
 
 	constructor(leaf: WorkspaceLeaf) {
@@ -50,13 +52,20 @@ export class MetaDataViewTableView extends ItemView {
 		this.header = container.createDiv();
 		this.error = container.createDiv();
 		this.results = container.createDiv();
+
+		// Logging
+		this.log = container.createDiv();
+		this.log.style.whiteSpace = "pre-wrap"
+		setLogOutput(this.log)
+
 		if (this.api) {
 			this.api.folderMeta;
 			this.topRightMenuContainer = this.header.createDiv({ cls: 'top-right-button-conainer' })
 			this.exportButton = this.topRightMenuContainer.createEl('button', { text: "Export ..." })
-			this.exportButton.addEventListener('click', () => {
+			this.exportButton.addEventListener('click', async() => {
 				if (this.lastFoundFileList && this.lastFoundFileList.length) {
-					exportSelection(this.lastFoundFileList)
+					await exportSelection(this.lastFoundFileList)
+					this.log.scrollIntoView();
 				} else {
 					new Notice('Hmmm... Nothing to export.')
 				}
@@ -69,7 +78,7 @@ export class MetaDataViewTableView extends ItemView {
 
 
 		// @ts-ignore
-		const initialQuery = this.app.plugins.plugins['meta-dataview'].settings.exportQuery
+		const initialQuery = '';
 		this.searchInput = new SearchInputWithHistory(
 			this.header,
 			(query) => this.searchQuery(query),
@@ -176,9 +185,9 @@ export class MetaDataViewTableView extends ItemView {
 								this.searchInput.set(`from #${metaValue}`)
 							})
 						} else {
-							item.addEventListener('click', () => 
+							item.addEventListener('click', () =>
 								this.searchInput.set(`where contains(${attrKey}, "${metaValue}")`))
-							
+
 						}
 					})
 				} else {

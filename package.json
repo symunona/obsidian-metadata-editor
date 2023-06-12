@@ -1,7 +1,7 @@
 {
-	"name": "meta-data-view",
+	"name": "bulk-metadata-editor",
 	"version": "1.0.0",
-	"description": "This is a sample plugin for Obsidian (https://obsidian.md)",
+	"description": "Manipulate metadata of multiple files at once in Obsidian (https://obsidian.md)",
 	"main": "main.js",
 	"scripts": {
 		"dev": "node esbuild.config.mjs",
@@ -24,6 +24,7 @@
 	},
 	"dependencies": {
 		"@types/underscore": "^1.11.4",
+		"obsidian-markdown-export": "github:bingryan/obsidian-markdown-export-plugin",
 		"underscore": "^1.13.6"
 	}
 }

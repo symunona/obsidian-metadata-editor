@@ -22,16 +22,18 @@ interface MetaDataViewSettings {
 	groupBy: string;
 	outputFolder: string;
 	exportQuery: string;
+	emptyTargetFolder: boolean
 }
 
 const DEFAULT_SETTINGS: MetaDataViewSettings = {
 	outputFolder: "output",
 	exportQuery: "blog",
 	slug: '',
-	groupBy: ''
+	groupBy: '',
+	emptyTargetFolder: false
 };
 
-export default class MetaDataView extends Plugin {
+export default class BulkMetadataEditor extends Plugin {
 	settings: MetaDataViewSettings;
 
 	// metaFolderCache: { [filePath: string]: any } = {};
@@ -77,34 +79,34 @@ export default class MetaDataView extends Plugin {
 			},
 		});
 		// This adds an editor command that can perform some operation on the current editor instance
-		this.addCommand({
-			id: "sample-editor-command",
-			name: "Sample editor command",
-			editorCallback: (editor: Editor, view: MarkdownView) => {
-				console.log(editor.getSelection());
-				editor.replaceSelection("Sample Editor Command");
-			},
-		});
-		// This adds a complex command that can check whether the current state of the app allows execution of the command
-		this.addCommand({
-			id: "open-sample-modal-complex",
-			name: "Open sample modal (complex)",
-			checkCallback: (checking: boolean) => {
-				// Conditions to check
-				const markdownView =
-					this.app.workspace.getActiveViewOfType(MarkdownView);
-				if (markdownView) {
-					// If checking is true, we're simply "checking" if the command can be run.
-					// If checking is false, then we want to actually perform the operation.
-					if (!checking) {
-						new SampleModal(this.app).open();
-					}
+		// this.addCommand({
+		// 	id: "sample-editor-command",
+		// 	name: "Sample editor command",
+		// 	editorCallback: (editor: Editor, view: MarkdownView) => {
+		// 		console.log(editor.getSelection());
+		// 		editor.replaceSelection("Sample Editor Command");
+		// 	},
+		// });
+		// // This adds a complex command that can check whether the current state of the app allows execution of the command
+		// this.addCommand({
+		// 	id: "open-sample-modal-complex",
+		// 	name: "Open sample modal (complex)",
+		// 	checkCallback: (checking: boolean) => {
+		// 		// Conditions to check
+		// 		const markdownView =
+		// 			this.app.workspace.getActiveViewOfType(MarkdownView);
+		// 		if (markdownView) {
+		// 			// If checking is true, we're simply "checking" if the command can be run.
+		// 			// If checking is false, then we want to actually perform the operation.
+		// 			if (!checking) {
+		// 				new SampleModal(this.app).open();
+		// 			}
 
-					// This command will only show up in Command Palette when the check function returns true
-					return true;
-				}
-			},
-		});
+		// 			// This command will only show up in Command Palette when the check function returns true
+		// 			return true;
+		// 		}
+		// 	},
+		// });
 
 		// This adds a settings tab so the user can configure various aspects of the plugin
 		this.addSettingTab(new OutputSettingTab(this.app, this));
@@ -176,7 +178,7 @@ export default class MetaDataView extends Plugin {
 		// }
 	}
 
-	onunload() {}
+	onunload() { }
 
 	async loadSettings() {
 		this.settings = Object.assign(
@@ -221,9 +223,9 @@ class SampleModal extends Modal {
 }
 
 class OutputSettingTab extends PluginSettingTab {
-	plugin: MetaDataView;
+	plugin: BulkMetadataEditor;
 
-	constructor(app: App, plugin: MetaDataView) {
+	constructor(app: App, plugin: BulkMetadataEditor) {
 		super(app, plugin);
 		this.plugin = plugin;
 	}
@@ -250,42 +252,54 @@ class OutputSettingTab extends PluginSettingTab {
 
 
 		new Setting(containerEl)
-		.setName("Filter Query")
-		.setDesc("DataView style query")
-		.addText((text) =>
-			text
-				.setPlaceholder("default")
-				.setValue(this.plugin.settings.exportQuery)
-				.onChange(async (value) => {
-					this.plugin.settings.exportQuery = value;
-					await this.plugin.saveSettings();
-				})
-		);
+			.setName("Filter Query")
+			.setDesc("DataView style query")
+			.addText((text) =>
+				text
+					.setPlaceholder("default")
+					.setValue(this.plugin.settings.exportQuery)
+					.onChange(async (value) => {
+						this.plugin.settings.exportQuery = value;
+						await this.plugin.saveSettings();
+					})
+			);
 		new Setting(containerEl)
-		.setName("Group By Folder")
-		.setDesc("if you specify a value, the exporter will create sub-directories based on this field")
-		.addText((text) =>
-			text
-				.setPlaceholder("any metadata field")
-				.setValue(this.plugin.settings.groupBy)
-				.onChange(async (value) => {
-					this.plugin.settings.groupBy = value;
-					await this.plugin.saveSettings();
-				})
-		);
+			.setName("Group By Folder")
+			.setDesc("if you specify a value, the exporter will create sub-directories based on this field")
+			.addText((text) =>
+				text
+					.setPlaceholder("any metadata field")
+					.setValue(this.plugin.settings.groupBy)
+					.onChange(async (value) => {
+						this.plugin.settings.groupBy = value;
+						await this.plugin.saveSettings();
+					})
+			);
 
 		new Setting(containerEl)
-		.setName("Metadata To Filename")
-		.setDesc("if you specify a value, the exporter will rename your file to this front-matter value - this is useful e.g. if you are using a static site generator, and want to use a field as the filename to make it more web-accessible. (If it does not have a value, it falls back to the original filename) - WARN: if multiple files have the same property values the last one will be written!")
-		.addText((text) =>
-			text
-				.setPlaceholder("any metadata field")
-				.setValue(this.plugin.settings.slug)
-				.onChange(async (value) => {
-					this.plugin.settings.slug = value;
-					await this.plugin.saveSettings();
-				})
-		);
+			.setName("Metadata To Filename")
+			.setDesc("if you specify a value, the exporter will rename your file to this front-matter value - this is useful e.g. if you are using a static site generator, and want to use a field as the filename to make it more web-accessible. (If it does not have a value, it falls back to the original filename) - WARN: if multiple files have the same property values the last one will be written!")
+			.addText((text) =>
+				text
+					.setPlaceholder("any metadata field")
+					.setValue(this.plugin.settings.slug)
+					.onChange(async (value) => {
+						this.plugin.settings.slug = value;
+						await this.plugin.saveSettings();
+					})
+			);
+
+		new Setting(containerEl)
+			.setName("Empty target folder on each export")
+			.setDesc("if true, contents will be erased every time!")
+			.addToggle((text) =>
+				text
+					.setValue(this.plugin.settings.emptyTargetFolder)
+					.onChange(async (value) => {
+						this.plugin.settings.emptyTargetFolder = value;
+						await this.plugin.saveSettings();
+					})
+			);
 
 	}
 }

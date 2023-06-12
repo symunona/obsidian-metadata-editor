@@ -1,9 +1,9 @@
 {
-	"id": "meta-dataview",
-	"name": "Meta Data View",
-	"version": "1.0.0",
+	"id": "bulk-metadata-editor",
+	"name": "Bulk Metadata Editor",
+	"version": "1.0.1",
 	"minAppVersion": "0.15.0",
-	"description": "Did not find a decent bulk metadata editor",
+	"description": "Mass update multiple file's metadata with ease",
 	"author": "symunona",
 	"authorUrl": "https://github.com/symunona",
 	"fundingUrl": "https://obsidian.md/pricing",
